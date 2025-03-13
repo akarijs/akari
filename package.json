@@ -3,19 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "packageManager": "yarn@1.22.19",
+  "packageManager": "yarn@4.5.2",
   "workspaces": [
     "docs",
     "external/*",
-    "external/*/external/*",
-    "external/*/packages/*",
-    "external/upstream/adapter/*",
-    "external/upstream/database/*",
-    "external/upstream/server/*",
-    "packages/*",
-    "plugins/*",
-    "plugins/common/*",
-    "plugins/database/*"
+    "packages/*"
   ],
   "scripts": {
     "docs": "yarn workspace @akarijs/docs",
@@ -39,7 +31,6 @@
   "license": "MIT",
   "devDependencies": {
     "@cordisjs/eslint-config": "^1.1.1",
-    "@octokit/webhooks-types": "^7.4.0",
     "@sinonjs/fake-timers": "^6.0.1",
     "@types/mocha": "^9.1.1",
     "@types/node": "^22.1.0",
