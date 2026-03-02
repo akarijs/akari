@@ -1,10 +1,11 @@
 import { Context, Schema } from 'cordis';
-import { AkariService } from '@akari/core';
+import { AkariService } from '@akarijs/core';
 import { Entity, EntityMap } from './entity';
-import { Dict } from 'cosmokit';
+
+export * from './entity';
 
 // 扩展 AkariContext 接口，让 IDE 能感知到 ctx.collections 服务
-declare module '@akari/core' {
+declare module '@akarijs/core' {
     interface AkariContext {
         collections: CollectionService;
     }
