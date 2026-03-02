@@ -1,0 +1,16 @@
+{
+    "name": "@akarijs/collection",
+    "version": "0.1.0",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "dependencies": {
+        "@akarijs/core": "workspace:*",
+        "cordis": "^3.18.0",
+        "cosmokit": "^1.6.0",
+        "fast-glob": "^3.3.0"
+    }
+}
