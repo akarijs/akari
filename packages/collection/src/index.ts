@@ -5,8 +5,8 @@ import { Entity, EntityMap } from './entity';
 export * from './entity';
 
 // 扩展 AkariContext 接口，让 IDE 能感知到 ctx.collections 服务
-declare module '@akarijs/core' {
-    interface AkariContext {
+declare module 'cordis' {
+    interface Context {
         collections: CollectionService;
     }
 }
