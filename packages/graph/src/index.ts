@@ -13,7 +13,7 @@ declare module 'cordis' {
     }
 }
 
-declare module '@akarijs/core' {
+declare module 'cordis' {
     interface AkariContext {
         graph: GraphService;
     }
