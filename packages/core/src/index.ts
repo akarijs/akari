@@ -1,33 +1,19 @@
-import { Context, Service } from 'cordis'
+export * from 'cordis';
+export * from './context';
+export * from './service';
 
-export * from 'cordis'
+import { Akari } from './context';
 
-declare module 'cordis' {
-  export interface Context {
-    akari: Akari<this>
-  }
+/**
+ * 工厂函数：创建一个 Akari 实例
+ */
+export function createAkari(config?: any) {
+  const ctx = new Akari(config);
 
-  export namespace Context {
-    const session: unique symbol
-  }
+  // 注入基础日志或监控逻辑
+  ctx.on('ready', () => {
+    console.log('✨ Akari.js Kernel is ready.');
+  });
 
-  interface Events {
-    'akari/meta'(): void
-  }
-}
-
-class AkariContext extends Context {
-  constructor() {
-    super()
-    this.set('akari', undefined)
-    this.plugin(Akari)
-  }
-}
-
-export { AkariContext as Context }
-
-export class Akari<C extends Context = Context> extends Service<C> {
-  public constructor(ctx: C) {
-    super(ctx, 'akari')
-  }
+  return ctx;
 }
