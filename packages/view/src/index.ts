@@ -17,7 +17,7 @@ export interface Projection {
 }
 
 declare module 'cordis' {
-    interface AkariContext {
+    interface Context {
         view: ViewService;
     }
 }
@@ -30,6 +30,9 @@ declare module 'cordis' {
 }
 
 export class ViewService extends AkariService {
+    // 告诉 Cordis，必须先加载 collections 和 graph，我才能工作
+    static inject = ['collections', 'graph'];
+
     private engines = new Map<string, RenderEngine>();
     private projections: Projection[] = [];
 
@@ -69,16 +72,18 @@ export class ViewService extends AkariService {
      * 执行渲染任务
      */
     private async refreshNode(nodeId: string) {
-        // 1. 从 ID 中解析出集合名称
         const [collectionName] = nodeId.split(':');
 
-        // 2. 找到该实体所属的所有投影
         const activeProjections = this.projections.filter(p => p.collection === collectionName);
 
         for (const proj of activeProjections) {
-            const entity = this.ctx.collections.define({ name: collectionName, schema: null as any }).get(nodeId.split(':')[1]);
+            const collection = this.ctx.collections.get(collectionName);
+            if (!collection) continue;
 
-            if (!entity || (proj.selector && !proj.selector(entity))) continue;
+            const entity = collection.get(nodeId.split(':')[1]);
+            if (!entity || (proj.selector && !proj.selector(entity))) {
+                continue;
+            }
 
             const engine = this.engines.get(proj.engine);
             if (!engine) {
