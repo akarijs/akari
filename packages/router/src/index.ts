@@ -23,6 +23,9 @@ export interface RouteRule {
 }
 
 export class RouterService extends AkariService {
+    // router 依赖 view 产生的事件，也依赖 collection 获取数据
+    static inject = ['collections', 'view'];
+
     private rules = new Map<string, RouteRule>();
     private routeMap = new Map<string, string>(); // 存储 nodeId -> path 的映射
 
@@ -51,28 +54,21 @@ export class RouterService extends AkariService {
      * 将渲染结果分发到文件系统
      */
     private async dispatch(nodeId: string, result: RenderResult) {
-        // 1. 简单演示：假设我们知道这个节点对应哪个投影
-        // 实际生产中需要从 ctx.graph 中查询关联的 Projection 节点
-        const [collectionName] = nodeId.split(':');
+        const [collectionName, entityId] = nodeId.split(':');
 
-        // 查找匹配此投影的规则
-        // 这里简化处理：寻找匹配该集合首选投影的规则
         const rule = Array.from(this.rules.values()).find(r => r.projection.includes(collectionName));
-
         if (!rule) return;
 
-        // 2. 获取实体对象以计算路径
-        const entity = this.ctx.collections.define({ name: collectionName, schema: null as any }).get(nodeId.split(':')[1]);
+        const collection = this.ctx.collections.get(collectionName);
+        const entity = collection?.get(entityId);
         if (!entity) return;
 
-        // 3. 计算最终路径
         const path = typeof rule.path === 'function'
             ? rule.path(entity)
             : this.interpolate(rule.path, entity);
 
         const fullPath = join(rule.outDir || 'dist', path);
 
-        // 4. 写入文件
         try {
             await mkdir(dirname(fullPath), { recursive: true });
             await writeFile(fullPath, result.content, 'utf-8');
