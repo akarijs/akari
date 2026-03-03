@@ -1,19 +1,35 @@
 {
   "compilerOptions": {
-    "target": "es2022",
-    "module": "esnext",
-    "sourceMap": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "strict": true,
     "declaration": true,
-    "emitDeclarationOnly": true,
-    "composite": true,
-    "incremental": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "moduleResolution": "bundler",
-    "strictBindCallApply": true,
-    "jsx": "react-jsx",
-    "types": [
-      "yml-register/types",
-    ],
-  },
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@akarijs/core": [
+        "packages/core/src/index.ts"
+      ],
+      "@akarijs/collection": [
+        "packages/collection/src/index.ts"
+      ],
+      "@akarijs/graph": [
+        "packages/graph/src/index.ts"
+      ],
+      "@akarijs/view": [
+        "packages/view/src/index.ts"
+      ],
+      "@akarijs/router": [
+        "packages/router/src/index.ts"
+      ]
+    }
+  }
 }
