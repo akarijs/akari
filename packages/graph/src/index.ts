@@ -20,6 +20,8 @@ declare module 'cordis' {
 }
 
 export class GraphService extends AkariService {
+    static inject = ['collections'];
+
     private nodes = new Map<string, AkariNode>();
     private edges = new Set<AkariEdge>();
 
