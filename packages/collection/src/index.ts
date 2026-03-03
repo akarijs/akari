@@ -31,26 +31,34 @@ export class CollectionService extends AkariService {
         super(ctx, 'collections', true);
     }
 
+    // 显式声明依赖 (如果有的话，目前 collection 是基座，通常被别人依赖)
+    static inject = [];
+
     protected init() {
         this.ctx.logger('akari').info('Collection service initialized.');
     }
 
     /**
-     * 定义一个新的集合
-     */
-    define<T>(options: CollectionConfig<T>) {
+       * 安全获取集合，如果不存在则报错或返回 null
+       */
+    public get(name: string) {
+        return this._storage.get(name);
+    }
+
+    public define<T>(options: CollectionConfig<T>) {
         const { name, schema } = options;
 
+        // 如果已经定义过，直接返回之前的 handle，而不是报错
         if (this._storage.has(name)) {
-            throw new Error(`Collection "${name}" already exists.`);
+            return this.getHandle(name, schema);
         }
 
-        const entities: EntityMap<T> = new Map();
-        this._storage.set(name, entities);
+        this._storage.set(name, new Map());
+        return this.getHandle(name, schema);
+    }
 
-        this.ctx.logger('akari').debug(`Defined collection: ${name}`);
-
-        // 返回一个操作句柄，支持流式调用
+    private getHandle<T>(name: string, schema: Schema<T>) {
+        const entities = this._storage.get(name)!;
         return {
             add: (id: string, rawData: any) => this.addEntity(name, id, rawData, schema),
             remove: (id: string) => this.removeEntity(name, id),
