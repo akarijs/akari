@@ -1,13 +1,18 @@
 {
-    "name": "@akarijs/graph",
-    "version": "0.1.0",
-    "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "dependencies": {
-        "@akarijs/core": "workspace:*",
-        "@akarijs/database": "workspace:*",
-        "cordis": "^3.18.0",
-        "cosmokit": "^1.6.0"
-    }
+  "name": "@akarijs/graph",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "lib/index.cjs",
+  "module": "lib/index.mjs",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "dependencies": {
+    "@akarijs/core": "workspace:*",
+    "@akarijs/database": "workspace:*",
+    "cordis": "^3.18.0",
+    "cosmokit": "^1.6.0"
+  }
 }
