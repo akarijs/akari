@@ -18,8 +18,8 @@
       "@akarijs/core": [
         "packages/core/src/index.ts"
       ],
-      "@akarijs/collection": [
-        "packages/collection/src/index.ts"
+      "@akarijs/database": [
+        "packages/database/src/index.ts"
       ],
       "@akarijs/graph": [
         "packages/graph/src/index.ts"

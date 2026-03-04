@@ -6,7 +6,7 @@
     "types": "./dist/index.d.ts",
     "dependencies": {
         "@akarijs/core": "workspace:*",
-        "@akarijs/collection": "workspace:*",
+        "@akarijs/database": "workspace:*",
         "cordis": "^3.18.0",
         "cosmokit": "^1.6.0"
     }
