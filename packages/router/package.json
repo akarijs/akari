@@ -8,7 +8,8 @@
         "@akarijs/core": "workspace:*",
         "@akarijs/view": "workspace:*",
         "@akarijs/database": "workspace:*",
+        "@akarijs/composer": "workspace:*",
         "cordis": "^3.18.0",
-        "cosmokit": "^1.6.0"
+        "cosmokit": "^1.8.0"
     }
 }

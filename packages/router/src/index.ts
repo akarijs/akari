@@ -1,98 +1,101 @@
-import { Context } from 'cordis';
-import { AkariService } from '@akarijs/core';
-import { RenderResult } from '@akarijs/view';
-import { Entity } from '@akarijs/collection';
-import { writeFile, mkdir } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { Context } from 'cordis'
+import { AkariService } from '@akarijs/core'
+import { } from '@akarijs/composer'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 
-// 1. 类型扩充
 declare module 'cordis' {
-    interface Context {
-        router: RouterService;
-    }
-    interface Events<C extends Context = Context> {
-        'router/emit'(path: string, content: string): void;
-    }
+  interface Context {
+    router: RouterService
+  }
 }
 
-export interface RouteRule {
-    projection: string;
-    // 支持字符串模板，例如 "/posts/:slug.html"
-    path: string | ((entity: Entity) => string);
-    outDir?: string;
+export interface RouterConfig {
+  /** 输出目录，默认为 dist */
+  outDir?: string
+  /** 是否开启物理写入，开发模式下通常为 false */
+  writeToDisk?: boolean
 }
 
 export class RouterService extends AkariService {
-    // router 依赖 view 产生的事件，也依赖 collection 获取数据
-    static inject = ['collections', 'view'];
+  /** 记录 pageId 到最终物理路径的映射，用于清理 */
+  private _pathMap = new Map<string, string>()
 
-    private rules = new Map<string, RouteRule>();
-    private routeMap = new Map<string, string>(); // 存储 nodeId -> path 的映射
+  constructor(ctx: Context, public config: RouterConfig = {}) {
+    super(ctx, 'router', true)
+    this.config.outDir ||= 'dist'
+    this.config.writeToDisk ??= true
+  }
 
-    constructor(ctx: Context) {
-        super(ctx, 'router', true);
+  static inject = ['view']
+
+  protected init() {
+    // 监听 View 层渲染完成的信号
+    this.ctx.on('view/render-complete', async (pageId, content, path) => {
+      await this.emit(pageId, content, path)
+    })
+
+    // 监听 Composer 页面删除信号 (假设已定义)
+    // this.ctx.on('composer/page-removed', async (pageId) => {
+    //   await this.remove(pageId)
+    // })
+
+    this.ctx.logger('akari').info('Router service (Refactored) initialized.')
+  }
+
+  /**
+   * 核心输出逻辑
+   */
+  private async emit(pageId: string, content: string, relativePath: string) {
+    // 1. 标准化路径：将 / 转换为 index.html
+    const normalizedPath = relativePath.endsWith('/')
+      ? join(relativePath, 'index.html')
+      : relativePath
+
+    const fullPath = join(this.config.outDir!, normalizedPath)
+
+    // 2. 缓存路径映射
+    this._pathMap.set(pageId, fullPath)
+
+    // 3. 物理写入
+    if (this.config.writeToDisk) {
+      try {
+        await mkdir(dirname(fullPath), { recursive: true })
+        await writeFile(fullPath, content, 'utf-8')
+        this.ctx.logger('akari').debug(`File written: ${normalizedPath}`)
+      } catch (err) {
+        this.ctx.logger('akari').error(`Write failed: ${fullPath}`, err)
+      }
     }
 
-    protected init() {
-        /**
-         * 核心逻辑：订阅渲染完成事件
-         * 当 ViewService 渲染完一个实体，Router 负责落地
-         */
-        this.ctx.on('view/render-complete', async (nodeId, result) => {
-            await this.dispatch(nodeId, result);
-        });
+    // 4. 发送最终路由就绪信号（可用于后续集成搜索索引或部署插件）
+    // this.ctx.emit('router/ready', pageId, fullPath)
+  }
+
+  /**
+   * 清理过期文件
+   */
+  private async remove(pageId: string) {
+    const fullPath = this._pathMap.get(pageId)
+    if (fullPath && this.config.writeToDisk) {
+      try {
+        await rm(fullPath, { force: true })
+        this._pathMap.delete(pageId)
+        this.ctx.logger('akari').info(`Orphaned file removed: ${fullPath}`)
+      } catch (err) {
+        this.ctx.logger('akari').warn(`Cleanup failed: ${fullPath}`)
+      }
     }
+  }
 
-    /**
-     * 添加路由规则
-     */
-    public addRule(rule: RouteRule) {
-        this.rules.set(rule.projection, rule);
-    }
-
-    /**
-     * 将渲染结果分发到文件系统
-     */
-    private async dispatch(nodeId: string, result: RenderResult) {
-        const [collectionName, entityId] = nodeId.split(':');
-
-        const rule = Array.from(this.rules.values()).find(r => r.projection.includes(collectionName));
-        if (!rule) return;
-
-        const collection = this.ctx.collections.get(collectionName);
-        const entity = collection?.get(entityId);
-        if (!entity) return;
-
-        const path = typeof rule.path === 'function'
-            ? rule.path(entity)
-            : this.interpolate(rule.path, entity);
-
-        const fullPath = join(rule.outDir || 'dist', path);
-
-        try {
-            await mkdir(dirname(fullPath), { recursive: true });
-            await writeFile(fullPath, result.content, 'utf-8');
-
-            this.routeMap.set(nodeId, fullPath);
-            this.ctx.emit('router/emit', fullPath, result.content);
-            this.ctx.logger('akari').info(`🚀 Emitted: ${path}`);
-        } catch (err) {
-            this.ctx.logger('akari').error(`Failed to write file ${fullPath}:`, err);
-        }
-    }
-
-    /**
-     * 简单的路径插值引擎 (MVP 级别)
-     */
-    private interpolate(pattern: string, entity: Entity): string {
-        let path = pattern;
-        const data = { ...entity.data, id: entity.id, slug: entity.data.slug || entity.id };
-
-        for (const [key, val] of Object.entries(data)) {
-            path = path.replace(`:${key}`, String(val));
-        }
-        return path;
-    }
+  /**
+   * 开发模式助手：通过路径反查内容
+   * 未来可集成进 Vite 的 Middlewares
+   */
+  public resolve(path: string): string | undefined {
+    // 这里可以实现一个快速索引，用于开发服务器实时拦截请求
+    return undefined
+  }
 }
 
-export default RouterService;
+export default RouterService
