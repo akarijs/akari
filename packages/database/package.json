@@ -1,0 +1,12 @@
+{
+  "name": "@akarijs/database",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.ts",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@akarijs/core": "workspace:*",
+    "cordis": "^3.18.0",
+    "cosmokit": "^1.6.0"
+  }
+}
