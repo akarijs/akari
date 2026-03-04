@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "scripts": {},
+  "scripts": {
+    "demo": "tsx examples/akari-demo.ts"
+  },
   "license": "MIT",
   "devDependencies": {
     "@cordisjs/eslint-config": "^1.1.1",
