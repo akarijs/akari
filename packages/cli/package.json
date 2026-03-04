@@ -1,0 +1,21 @@
+{
+  "name": "@akarijs/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "akari": "./bin/akari.js"
+  },
+  "dependencies": {
+    "@akarijs/composer": "workspace:*",
+    "@akarijs/core": "workspace:*",
+    "@akarijs/database": "workspace:*",
+    "@akarijs/router": "workspace:*",
+    "@akarijs/view": "workspace:*",
+    "cac": "^6.7.14",
+    "cordis": "^3.18.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9"
+  }
+}
