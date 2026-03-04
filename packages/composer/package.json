@@ -1,0 +1,13 @@
+{
+  "name": "@akarijs/composer",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.ts",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@akarijs/core": "workspace:*",
+    "@akarijs/database": "workspace:*",
+    "cordis": "^3.18.0",
+    "cosmokit": "^1.8.0"
+  }
+}
