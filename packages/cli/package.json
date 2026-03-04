@@ -5,6 +5,10 @@
   "bin": {
     "akari": "./bin/akari.js"
   },
+  "files": [
+    "dist",
+    "bin"
+  ],
   "dependencies": {
     "@akarijs/composer": "workspace:*",
     "@akarijs/core": "workspace:*",
