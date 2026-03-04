@@ -2,6 +2,14 @@
   "extends": "./tsconfig.base",
   "compilerOptions": {
     "baseUrl": ".",
+    "paths": {
+      "@akarijs/core": ["packages/core/src/index.ts"],
+      "@akarijs/protocol": ["packages/protocol/src/index.ts"],
+      "@akarijs/database": ["packages/database/src/index.ts"],
+      "@akarijs/composer": ["packages/composer/src/index.ts"],
+      "@akarijs/view": ["packages/view/src/index.ts"],
+      "@akarijs/router": ["packages/router/src/index.ts"]
+    }
   },
-  "files": [],
+  "files": []
 }

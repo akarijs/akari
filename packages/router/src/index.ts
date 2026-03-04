@@ -1,6 +1,8 @@
 import { Context } from 'cordis'
 import { AkariService } from '@akarijs/core'
 import { } from '@akarijs/composer'
+import { } from '@akarijs/view'
+
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 

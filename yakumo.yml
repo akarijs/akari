@@ -1,4 +1,5 @@
-- name: yakumo
+- id: k7fnq2
+  name: yakumo
   config:
     pipeline:
       build:
@@ -6,6 +7,15 @@
         - esbuild
       clean:
         - tsc --clean
-- name: yakumo-esbuild
-- name: yakumo-mocha
-- name: yakumo-tsc
+- id: s9jel8
+  name: yakumo-esbuild
+- id: nbzyts
+  name: yakumo-mocha
+- id: sp57aw
+  name: yakumo-tsc
+- id: uzqml4
+  name: yakumo/run
+- id: x6gvos
+  name: yakumo/prepare
+- id: o13inc
+  name: yakumo/version

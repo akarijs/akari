@@ -3,8 +3,16 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "demo": "tsx examples/akari-demo.ts"
+    "demo": "tsx examples/akari-demo.ts",
+    "build": "yakumo build",
+    "bump": "yakumo version",
+    "pub": "yakumo publish",
+    "test": "yakumo mocha",
+    "prepare": "yakumo prepare"
   },
   "license": "MIT",
   "devDependencies": {

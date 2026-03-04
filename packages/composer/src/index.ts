@@ -1,5 +1,6 @@
 import { Context } from 'cordis'
 import { AkariService } from '@akarijs/core'
+import { } from '@akarijs/database';
 
 declare module 'cordis' {
   interface Context {

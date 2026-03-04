@@ -2,8 +2,13 @@
   "name": "@akarijs/database",
   "version": "0.1.0",
   "type": "module",
-  "main": "./dist/index.ts",
-  "types": "./dist/index.d.ts",
+  "main": "lib/index.cjs",
+  "module": "lib/index.mjs",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "src"
+  ],
   "dependencies": {
     "@akarijs/core": "workspace:*",
     "cordis": "^3.18.0",
