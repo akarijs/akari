@@ -1,0 +1,19 @@
+{
+  "name": "@akarijs/manager",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "lib/index.cjs",
+  "module": "lib/index.mjs",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "dependencies": {
+    "@akarijs/core": "workspace:*",
+    "@akarijs/datasource": "workspace:*",
+    "@minatojs/driver-sqlite": "^4.7.0",
+    "cordis": "^3.18.0",
+    "cosmokit": "^1.6.0"
+  }
+}
