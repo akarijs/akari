@@ -28,19 +28,19 @@ export class DatasourceService extends Service {
   /**
    * 激活并获取一个数据源实例
    */
-  public use(name: string = 'system'): Database {
+  public use<S = {}>(name: string = 'system') {
     if (!this._instances.has(name)) {
       this._instances.set(name, new Database())
     }
-    return this._instances.get(name)!
+    return this._instances.get(name)! as Database<S>
   }
 
   /**
    * 核心方法：根据配置连接数据源
    * 无论它是真实的 DB 还是文件驱动
    */
-  public async connect(name: string, driverName: string, options: any) {
-    const db = this.use(name)
+  public async connect<S = {}>(name: string, driverName: string, options: any) {
+    const db = this.use<S>(name)
     const Driver = this._drivers.get(driverName)
 
     if (!Driver) {
