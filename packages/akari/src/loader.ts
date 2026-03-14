@@ -5,10 +5,10 @@
  * config formats. Searches for `akari.config.*` in the working directory.
  */
 
-import { readFileSync, readdirSync, existsSync, watch, type FSWatcher } from 'node:fs'
+import { readFileSync, readdirSync, existsSync, watch, type FSWatcher, accessSync, writeFileSync, renameSync, constants } from 'node:fs'
 import { resolve, extname, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { load as yamlLoad } from 'js-yaml'
+import { load as yamlLoad, dump as yamlDump } from 'js-yaml'
 import * as dotenv from 'dotenv'
 import { Context } from 'cordis'
 import { Database } from 'minato'
@@ -68,6 +68,8 @@ export class Loader {
   public mime!: string
   /** Parsed config object. */
   public config!: Record<string, any>
+  /** Whether the config file can be overwritten in place. */
+  public writable = false
   /** Created Cordis app context. */
   public app?: Context
 
@@ -82,6 +84,8 @@ export class Loader {
   private currentMode?: 'dev' | 'build'
   private watchers: FSWatcher[] = []
   private watchTimer?: NodeJS.Timeout
+  private _writeTask?: Promise<void>
+  private _writeSilent = true
 
   /**
    * Initialize the loader.
@@ -114,6 +118,14 @@ export class Loader {
       resolve(this.baseDir, '.env'),
       resolve(this.baseDir, '.env.local'),
     ]
+
+    this.writable = false
+    if (this.mime) {
+      try {
+        accessSync(this.filename, constants.W_OK)
+        this.writable = true
+      } catch {}
+    }
   }
 
   /**
@@ -145,7 +157,7 @@ export class Loader {
    *
    * @returns The parsed config object.
    */
-  readConfig(): Record<string, any> {
+  readConfig(initial = false): Record<string, any> {
     this.loadEnv()
     const raw = readFileSync(this.filename, 'utf-8')
 
@@ -162,8 +174,66 @@ export class Loader {
     }
 
     this.config = this.normalizeConfig(this.config)
+    if (initial) {
+      this.migrate()
+      if (this.writable) {
+        void this._writeConfig(true).catch(() => {})
+      }
+    }
 
     return this.config
+  }
+
+  protected migrateEntry(_name: string, config: any): any {
+    return config
+  }
+
+  protected migrateName(_name: string, _config: any): string | void {
+    return
+  }
+
+  migrate() {
+    if (!this.config?.plugins || typeof this.config.plugins !== 'object') return
+    this.migratePluginGroup(this.config.plugins)
+  }
+
+  private migratePluginGroup(group: Dict) {
+    for (const key of Object.keys(group)) {
+      if (key.startsWith('$')) continue
+
+      const value = group[key]
+      const parsed = this.parsePluginKey(key)
+      const migratedName = this.migrateName(parsed.name, value) ?? parsed.name
+      const migratedKey = this.stringifyPluginKey({ ...parsed, name: migratedName })
+
+      const migrated = this.migrateEntry(migratedName, value) ?? value
+      if (migratedKey !== key) {
+        delete group[key]
+      }
+      group[migratedKey] = migrated
+
+      if (migratedName === 'group' && migrated && typeof migrated === 'object') {
+        this.migratePluginGroup(migrated)
+      }
+    }
+  }
+
+  private parsePluginKey(key: string) {
+    const disabled = key.startsWith('~')
+    const body = disabled ? key.slice(1) : key
+    const pivot = body.indexOf(':')
+    if (pivot === -1) {
+      return { disabled, name: body, suffix: '' }
+    }
+    return {
+      disabled,
+      name: body.slice(0, pivot),
+      suffix: body.slice(pivot),
+    }
+  }
+
+  private stringifyPluginKey(parsed: { disabled: boolean, name: string, suffix: string }) {
+    return `${parsed.disabled ? '~' : ''}${parsed.name}${parsed.suffix}`
   }
 
   private loadEnv() {
@@ -187,30 +257,32 @@ export class Loader {
   }
 
   private normalizeConfig(config: Dict): Dict {
-    if (config.plugins && typeof config.plugins === 'object' && !Array.isArray(config.plugins)) {
-      return config
-    }
-
+    const root: Dict = { ...config }
     const plugins: Dict = {}
-    for (const [key, value] of Object.entries(config)) {
+
+    for (const [key, value] of Object.entries(root)) {
       if (RESERVED_KEYS.has(key) || key.startsWith('$')) continue
       plugins[key] = value
+      delete root[key]
     }
-    return {
-      ...config,
-      plugins,
+
+    if (config.plugins && typeof config.plugins === 'object' && !Array.isArray(config.plugins)) {
+      Object.assign(plugins, config.plugins)
     }
+
+    root.plugins = plugins
+    return root
   }
 
   private prepareConfig(mode: 'dev' | 'build' | undefined): Dict {
     const config = structuredClone(this.config)
 
     if (mode === 'dev') {
-      config.server ??= {}
-      config.console ??= {}
-      config['console-editor'] ??= {}
-      config['console-explorer'] ??= { rootDir: this.baseDir }
-      config['console-market'] ??= {}
+      config.server ??= config.plugins?.server ?? {}
+      config.console ??= config.plugins?.console ?? {}
+      config['console-editor'] ??= config.plugins?.['console-editor'] ?? {}
+      config['console-explorer'] ??= config.plugins?.['console-explorer'] ?? { rootDir: this.baseDir }
+      config['console-market'] ??= config.plugins?.['console-market'] ?? {}
       config.plugins = {
         ...config.plugins,
         server: config.server,
@@ -225,7 +297,7 @@ export class Loader {
   }
 
   async createApp(mode?: 'dev' | 'build'): Promise<Context> {
-    if (!this.config) this.readConfig()
+    if (!this.config) this.readConfig(true)
 
     this.currentMode = mode
     const config = this.prepareConfig(mode)
@@ -240,6 +312,32 @@ export class Loader {
     app.plugin(ContentService)
 
     await this.reloadGroup(app, config.plugins)
+
+    app.on('internal/before-update' as any, (fork: any, neo: any) => {
+      const key = this.getForkKey(fork)
+      if (!key || !this.config?.plugins) return
+
+      const old = this.config.plugins[key] || {}
+      const meta = separate(old)[1]
+      this.config.plugins[key] = {
+        ...meta,
+        ...(neo || {}),
+      }
+      void this.writeConfig()
+    })
+
+    app.on('internal/fork' as any, (fork: any) => {
+      if (fork?.uid) return
+      const key = this.getForkKey(fork)
+      if (!key) return
+      this.persistPluginDisabled(key)
+    })
+
+    app.on('internal/runtime' as any, (scope: any) => {
+      const key = this.getForkKey(scope)
+      if (!key) return
+      this.persistPluginEnabled(key)
+    })
 
     app.accept(['plugins'], (newConfig) => {
       void this.reloadGroup(app, this.normalizeConfig(newConfig).plugins)
@@ -315,6 +413,77 @@ export class Loader {
   fullReload(code = Loader.exitCode) {
     process.send?.({ type: 'reload' })
     process.exit(code)
+  }
+
+  private serializeConfig() {
+    if (this.mime === 'application/yaml') {
+      return yamlDump(this.normalizeConfig(this.config), { noRefs: true })
+    }
+    if (this.mime === 'application/json') {
+      return JSON.stringify(this.normalizeConfig(this.config), null, 2) + '\n'
+    }
+    throw new Error(`cannot serialize unsupported mime type: ${this.mime}`)
+  }
+
+  private async _writeConfig(silent = false) {
+    if (!this.writable) {
+      throw new Error('cannot overwrite readonly config')
+    }
+
+    const body = this.serializeConfig()
+    const tempFile = this.filename + '.tmp'
+    writeFileSync(tempFile, body)
+    renameSync(tempFile, this.filename)
+
+    if (!silent) {
+      this.app?.emit('config' as any)
+    }
+  }
+
+  writeConfig(silent = false) {
+    this._writeSilent &&= silent
+    if (this._writeTask) return this._writeTask
+
+    return this._writeTask = new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const finalSilent = this._writeSilent
+        this._writeSilent = true
+        this._writeTask = undefined
+        this._writeConfig(finalSilent).then(resolve, reject)
+      }, 0)
+    })
+  }
+
+  private getForkKey(target: any) {
+    for (const [key, fork] of Object.entries(this.forks)) {
+      if (fork === target) return key
+    }
+    return undefined
+  }
+
+  private persistPluginDisabled(key: string) {
+    if (!this.config?.plugins) return
+
+    const enabledKey = key.replace(/^~/, '')
+    const disabledKey = `~${enabledKey}`
+    if (!(enabledKey in this.config.plugins)) return
+
+    this.config.plugins[disabledKey] = this.config.plugins[enabledKey]
+    delete this.config.plugins[enabledKey]
+    void this.writeConfig()
+  }
+
+  private persistPluginEnabled(key: string) {
+    if (!this.config?.plugins) return
+
+    const enabledKey = key.replace(/^~/, '')
+    const disabledKey = `~${enabledKey}`
+    if (!(disabledKey in this.config.plugins)) return
+    if (enabledKey in this.config.plugins) return
+
+    this.config.plugins[enabledKey] = this.config.plugins[disabledKey]
+    delete this.config.plugins[disabledKey]
+    void this.writeConfig()
   }
 
   async reloadGroup(parent: Context, plugins: Dict = {}) {

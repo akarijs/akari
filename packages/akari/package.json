@@ -14,10 +14,9 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist",
-    "bin"
-  ],
+  "scripts": {
+    "build": "tsc --build"
+  },
   "dependencies": {
     "@akari/plugin-console": "workspace:*",
     "@akari/plugin-console-editor": "workspace:*",

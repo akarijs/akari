@@ -25,7 +25,7 @@ try {
 
 let config: Record<string, any>
 try {
-  config = loader.readConfig()
+  config = loader.readConfig(true)
 } catch (err: any) {
   console.error(`❌ ${err.message}`)
   process.exit(1)

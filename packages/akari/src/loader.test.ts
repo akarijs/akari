@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { Loader } from './loader.js'
 
@@ -76,18 +76,18 @@ describe('Loader', () => {
   })
 
   describe('readConfig()', () => {
-    it('should parse YAML config', () => {
+    it('should parse YAML config into plugins-only shape', () => {
       const configPath = join(tmpDir, 'akari.config.yml')
       writeFileSync(configPath, 'transformer-markdown:\n  html: true\nbuild:\n  outputDir: ./public\n')
       const loader = new Loader()
       loader.init(configPath)
       const config = loader.readConfig()
-      expect(config['transformer-markdown']).toEqual({ html: true })
+      expect(config['transformer-markdown']).toBeUndefined()
       expect(config.build).toEqual({ outputDir: './public' })
       expect(config.plugins['transformer-markdown']).toEqual({ html: true })
     })
 
-    it('should parse JSON config', () => {
+    it('should parse JSON config into plugins-only shape', () => {
       const configPath = join(tmpDir, 'akari.config.json')
       writeFileSync(configPath, JSON.stringify({
         'transformer-markdown': { html: true },
@@ -96,7 +96,7 @@ describe('Loader', () => {
       const loader = new Loader()
       loader.init(configPath)
       const config = loader.readConfig()
-      expect(config['transformer-markdown']).toEqual({ html: true })
+      expect(config['transformer-markdown']).toBeUndefined()
       expect(config.build).toEqual({ outputDir: './public' })
       expect(config.plugins['transformer-markdown']).toEqual({ html: true })
     })
@@ -117,14 +117,160 @@ describe('Loader', () => {
       expect(() => loader.readConfig()).toThrow('invalid config file')
     })
 
-    it('should store config on the loader instance', () => {
+    it('should store normalized config on the loader instance', () => {
       const configPath = join(tmpDir, 'akari.config.yml')
       writeFileSync(configPath, 'foo: bar\n')
       const loader = new Loader()
       loader.init(configPath)
       loader.readConfig()
-      expect(loader.config.foo).toEqual('bar')
+      expect(loader.config.foo).toBeUndefined()
       expect(loader.config.plugins.foo).toEqual('bar')
+    })
+
+    it('should apply migrateEntry() on initial read', () => {
+      class TestLoader extends Loader {
+        protected migrateEntry(name: string, config: any) {
+          if (name === 'foo') return { ...config, migrated: true }
+          return config
+        }
+      }
+
+      const configPath = join(tmpDir, 'akari.config.yml')
+      writeFileSync(configPath, 'foo:\n  bar: 1\n')
+
+      const loader = new TestLoader()
+      loader.init(configPath)
+      const config = loader.readConfig(true)
+      expect(config.plugins.foo).toEqual({ bar: 1, migrated: true })
+    })
+
+    it('should write migrated config back to file when writable', async () => {
+      class TestLoader extends Loader {
+        protected migrateEntry(name: string, config: any) {
+          if (name === 'foo') return { ...config, migrated: true }
+          return config
+        }
+      }
+
+      const configPath = join(tmpDir, 'akari.config.yml')
+      writeFileSync(configPath, 'foo:\n  bar: 1\n')
+
+      const loader = new TestLoader()
+      loader.init(configPath)
+      loader.readConfig(true)
+      await new Promise(resolve => setTimeout(resolve, 10))
+
+      const raw = readFileSync(configPath, 'utf8')
+      expect(raw).toContain('migrated: true')
+    })
+
+    it('should support explicit config write via writeConfig()', async () => {
+      const configPath = join(tmpDir, 'akari.config.yml')
+      writeFileSync(configPath, 'foo:\n  bar: 1\n')
+
+      const loader = new Loader()
+      loader.init(configPath)
+      loader.readConfig()
+      loader.config.plugins.foo = { bar: 2 }
+
+      await loader.writeConfig(true)
+
+      const raw = readFileSync(configPath, 'utf8')
+      expect(raw).toContain('bar: 2')
+    })
+
+    it('should support plugin key migration via migrateName()', () => {
+      class TestLoader extends Loader {
+        protected migrateName(name: string) {
+          if (name === 'legacy-plugin') return 'modern-plugin'
+          return undefined
+        }
+      }
+
+      const configPath = join(tmpDir, 'akari.config.yml')
+      writeFileSync(configPath, 'legacy-plugin:\n  enabled: true\n')
+
+      const loader = new TestLoader()
+      loader.init(configPath)
+      const config = loader.readConfig(true)
+
+      expect(config.plugins['legacy-plugin']).toBeUndefined()
+      expect(config.plugins['modern-plugin']).toEqual({ enabled: true })
+    })
+
+    it('should preserve disabled and suffix parts when migrateName() renames plugin', () => {
+      class TestLoader extends Loader {
+        protected migrateName(name: string) {
+          if (name === 'legacy-plugin') return 'modern-plugin'
+          return undefined
+        }
+      }
+
+      const configPath = join(tmpDir, 'akari.config.yml')
+      writeFileSync(configPath, 'plugins:\n  "~legacy-plugin:alpha":\n    foo: 1\n')
+
+      const loader = new TestLoader()
+      loader.init(configPath)
+      const config = loader.readConfig(true)
+
+      expect(config.plugins['~legacy-plugin:alpha']).toBeUndefined()
+      expect(config.plugins['~modern-plugin:alpha']).toEqual({ foo: 1 })
+    })
+
+    it('should write canonical plugins-only config without YAML anchors', async () => {
+      const configPath = join(tmpDir, 'akari.config.yml')
+      writeFileSync(configPath, 'foo:\n  bar: 1\n')
+
+      const loader = new Loader()
+      loader.init(configPath)
+      loader.readConfig()
+
+      await loader.writeConfig(true)
+
+      const raw = readFileSync(configPath, 'utf8')
+      expect(raw).toContain('plugins:')
+      expect(raw).toContain('foo:')
+      expect(raw).not.toContain('&ref_')
+      expect(raw).not.toContain('*ref_')
+      expect(raw.startsWith('foo:')).toBe(false)
+    })
+
+    it('should persist disabled state as ~plugin key', async () => {
+      const configPath = join(tmpDir, 'akari.config.yml')
+      writeFileSync(configPath, 'plugins:\n  foo:\n    bar: 1\n')
+
+      const loader = new Loader()
+      loader.init(configPath)
+      loader.readConfig()
+
+      ;(loader as any).persistPluginDisabled('foo')
+      await new Promise(resolve => setTimeout(resolve, 10))
+
+      expect(loader.config.plugins.foo).toBeUndefined()
+      expect(loader.config.plugins['~foo']).toEqual({ bar: 1 })
+
+      const raw = readFileSync(configPath, 'utf8')
+      expect(raw).toContain('~foo:')
+      expect(raw).not.toContain('\n  foo:\n')
+    })
+
+    it('should persist enabled state as plugin key', async () => {
+      const configPath = join(tmpDir, 'akari.config.yml')
+      writeFileSync(configPath, 'plugins:\n  "~foo":\n    bar: 1\n')
+
+      const loader = new Loader()
+      loader.init(configPath)
+      loader.readConfig()
+
+      ;(loader as any).persistPluginEnabled('foo')
+      await new Promise(resolve => setTimeout(resolve, 10))
+
+      expect(loader.config.plugins['~foo']).toBeUndefined()
+      expect(loader.config.plugins.foo).toEqual({ bar: 1 })
+
+      const raw = readFileSync(configPath, 'utf8')
+      expect(raw).toContain('\n  foo:\n')
+      expect(raw).not.toContain('~foo:')
     })
   })
 })

@@ -46,7 +46,7 @@ function loadLoader(configPath?: string): Loader {
     process.exit(1)
   }
   try {
-    loader.readConfig()
+    loader.readConfig(true)
     return loader
   } catch (err: any) {
     console.error(`❌ ${err.message}`)
