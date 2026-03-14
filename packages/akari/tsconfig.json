@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src"],
+  "exclude": ["dist", "node_modules"],
+  "references": [
+    { "path": "../core" },
+    { "path": "../../plugins/content" },
+    { "path": "../../plugins/engine-nunjucks" },
+    { "path": "../../plugins/source-fs" },
+    { "path": "../../themes/default" },
+    { "path": "../../plugins/console" },
+    { "path": "../../plugins/console-editor" },
+    { "path": "../../plugins/console-explorer" },
+    { "path": "../../plugins/console-market" },
+    { "path": "../../plugins/transformer-markdown" },
+    { "path": "../../plugins/rss" },
+    { "path": "../../plugins/sitemap" },
+    { "path": "../../plugins/server" },
+    { "path": "../../plugins/hmr" }
+  ]
+}
