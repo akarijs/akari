@@ -1,19 +1,63 @@
-export * from 'cordis';
-export * from './context';
-export * from './service';
-
-import { Akari } from './context';
-
 /**
- * 工厂函数：创建一个 Akari 实例
+ * @akari/core — Core services and datasource abstractions.
+ *
+ * Business data models are owned by plugins and registered into datasource.
  */
-export function createAkari(config?: any) {
-  const ctx = new Akari(config);
 
-  // 注入基础日志或监控逻辑
-  ctx.on('ready', () => {
-    console.log('✨ Akari.js Kernel is ready.');
-  });
+// Re-export cordis for consumer convenience
+export { Context, Service, Schema } from 'cordis'
+export type { Plugin } from 'cordis'
 
-  return ctx;
+// Services
+export * from './transformer.js'
+export * from './template.js'
+export * from './datasource.js'
+
+// ---------------------------------------------------------------------------
+// Legacy domain types (kept for backward compatibility)
+// ---------------------------------------------------------------------------
+
+export interface SourceFile {
+  /** Relative path from the source directory. */
+  path: string
+  /** Raw file content. */
+  raw: string
+  /** Parsed front-matter fields. */
+  frontMatter: Record<string, unknown>
+  /** Body content after front-matter is stripped. */
+  content: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface RenderContext {
+  source: SourceFile
+  /** Rendered HTML output. */
+  html: string
+  layout: string
+  data: Record<string, unknown>
+}
+
+export interface SiteData {
+  config: SiteConfig
+  posts: SourceFile[]
+  pages: SourceFile[]
+  tags: Map<string, SourceFile[]>
+  categories: Map<string, SourceFile[]>
+}
+
+export interface SiteConfig {
+  title: string
+  subtitle?: string
+  description?: string
+  author?: string
+  url?: string
+  /** URL root path, defaults to "/". */
+  root?: string
+  /** Permalink pattern, e.g. ":year/:month/:day/:title/". */
+  permalink?: string
+  /** Directory to read source files from. */
+  sourceDir?: string
+  /** Directory to write generated files to. */
+  publicDir?: string
 }

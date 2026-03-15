@@ -1,18 +1,25 @@
 {
   "name": "@akarijs/core",
-  "version": "0.1.0",
-  "description": "The reactive kernel of Akari.js based on Cordis",
+  "version": "0.0.1",
+  "description": "Core context, service interfaces, and domain types for Akari",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
-  "dependencies": {
-    "cordis": "^3.18.0",
-    "cosmokit": "^1.6.0"
+  "scripts": {
+    "build": "tsc --build"
   },
   "devDependencies": {
-    "typescript": "^5.7.0"
+    "@types/node": "^25.5.0",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "cordis": "3",
+    "minato": "3"
   }
 }
