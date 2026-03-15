@@ -3,7 +3,7 @@
  *
  * Reads plugin configuration from the YAML config and loads each plugin
  * with its options. Core services (Database, TransformerService,
- * TemplateService, ContentService) are always loaded.
+ * TemplateService, DataSource) are always loaded.
  */
 
 import { dirname, resolve } from 'node:path'
@@ -11,8 +11,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { Context } from 'cordis'
 import { Database } from 'minato'
 import MemoryDriver from '@minatojs/driver-memory'
-import { TransformerService, TemplateService } from '@akari/core'
-import { ContentService } from '@akari/plugin-content'
+import { DataSource, TemplateService, TransformerService } from '@akari/core'
 
 /** Map of known plugin short names to their import specifiers. */
 const BUILTIN_PLUGINS: Record<string, string> = {
@@ -68,9 +67,9 @@ export async function bootstrap(config: AkariConfig, baseDir: string): Promise<C
   // Core infrastructure — always loaded
   ctx.plugin(Database as any)
   ctx.plugin(MemoryDriver)
+  ctx.plugin(DataSource)
   ctx.plugin(TransformerService)
   ctx.plugin(TemplateService)
-  ctx.plugin(ContentService)
 
   // Load plugins from config
   for (const [key, value] of Object.entries(config)) {
@@ -114,7 +113,7 @@ export async function bootstrap(config: AkariConfig, baseDir: string): Promise<C
 
   // Wait for core services to be ready
   await new Promise<void>(r => {
-    ctx.inject(['content', 'transformer', 'template'], () => r())
+    ctx.inject(['datasource', 'transformer', 'template'], () => r())
   })
 
   // Allow source-fs initial sync to complete.

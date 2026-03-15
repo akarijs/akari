@@ -41,7 +41,12 @@ const ctx = await loader.createApp('dev')
 
 console.log('🌸 Akari — Starting...')
 
-const { posts, pages } = await ctx.content.getSiteData()
+const posts = ctx.datasource.hasCollection('posts')
+  ? await (ctx.datasource as any).collection('posts').list()
+  : []
+const pages = ctx.datasource.hasCollection('pages')
+  ? await (ctx.datasource as any).collection('pages').list()
+  : []
 console.log(`📦 Content: ${posts.length} posts, ${pages.length} pages`)
 
 await (ctx as any).parallel('akari/generate', outputDir)

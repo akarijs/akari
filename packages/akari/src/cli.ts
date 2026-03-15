@@ -31,6 +31,29 @@ interface WorkerMessage {
   type: 'start' | 'exit' | 'reload'
 }
 
+async function getSiteSnapshot(ctx: any) {
+  const posts = ctx.datasource.hasCollection('posts')
+    ? await ctx.datasource.collection('posts').list()
+    : []
+  const pages = ctx.datasource.hasCollection('pages')
+    ? await ctx.datasource.collection('pages').list()
+    : []
+
+  const tags = new Set<string>()
+  const categories = new Set<string>()
+  for (const post of posts) {
+    for (const tag of post.tags || []) tags.add(tag)
+    for (const category of post.categories || []) categories.add(category)
+  }
+
+  return {
+    posts,
+    pages,
+    tags: [...tags],
+    categories: [...categories],
+  }
+}
+
 const cli = cac('akari')
 
 /**
@@ -67,7 +90,7 @@ cli.command('build', 'Generate static site')
 
     console.log('🌸 Akari — Building site...')
 
-    const { posts, pages, tags, categories } = await ctx.content.getSiteData()
+    const { posts, pages, tags, categories } = await getSiteSnapshot(ctx)
     console.log(`📦 Content: ${posts.length} posts, ${pages.length} pages, ${tags.length} tags, ${categories.length} categories`)
 
     console.log(`🔨 Generating to: ${outputDir}`)
@@ -88,7 +111,7 @@ async function startDev(options: { config?: string; port?: string }) {
 
   console.log('🌸 Akari — Starting development server...')
 
-  const { posts, pages } = await ctx.content.getSiteData()
+  const { posts, pages } = await getSiteSnapshot(ctx)
   console.log(`📦 Content: ${posts.length} posts, ${pages.length} pages`)
 
   // Generate initial site

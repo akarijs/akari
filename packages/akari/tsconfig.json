@@ -8,7 +8,6 @@
   "exclude": ["dist", "node_modules"],
   "references": [
     { "path": "../core" },
-    { "path": "../../plugins/content" },
     { "path": "../../plugins/engine-nunjucks" },
     { "path": "../../plugins/source-fs" },
     { "path": "../../themes/default" },

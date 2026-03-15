@@ -23,7 +23,6 @@
     "@akari/plugin-console-explorer": "workspace:*",
     "@akari/plugin-console-market": "workspace:*",
     "@akari/core": "workspace:*",
-    "@akari/plugin-content": "workspace:*",
     "@akari/plugin-engine-nunjucks": "workspace:*",
     "@akari/plugin-hmr": "workspace:*",
     "@akari/plugin-rss": "workspace:*",

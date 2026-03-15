@@ -13,8 +13,7 @@ import * as dotenv from 'dotenv'
 import { Context } from 'cordis'
 import { Database } from 'minato'
 import MemoryDriver from '@minatojs/driver-memory'
-import { TemplateService, TransformerService } from '@akari/core'
-import { ContentService } from '@akari/plugin-content'
+import { DataSource, TemplateService, TransformerService } from '@akari/core'
 
 /** MIME types for supported writable config formats. */
 const writable: Record<string, string> = {
@@ -307,9 +306,9 @@ export class Loader {
 
     app.plugin(Database as any)
     app.plugin(MemoryDriver)
+    app.plugin(DataSource)
     app.plugin(TransformerService)
     app.plugin(TemplateService)
-    app.plugin(ContentService)
 
     await this.reloadGroup(app, config.plugins)
 
@@ -346,7 +345,7 @@ export class Loader {
     await app.start()
 
     await new Promise<void>((resolveReady) => {
-      app.inject(['content', 'transformer', 'template'], () => resolveReady())
+      app.inject(['datasource', 'transformer', 'template'], () => resolveReady())
     })
 
     return app
