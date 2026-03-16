@@ -1,0 +1,21 @@
+{
+  "name": "@akari/plugin-console-market",
+  "version": "0.0.1",
+  "description": "Console market plugin for Akari — plugin marketplace via Console",
+  "type": "module",
+  "scripts": {},
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@akari/core": "workspace:*",
+    "@akari/plugin-console": "workspace:*",
+    "cordis": "^3.18.1",
+    "vue": "^3.5.30"
+  },
+  "devDependencies": {
+    "@akari/plugin-server": "workspace:*",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "vite": "^8.0.1",
+    "typescript": "^5.4.5"
+  }
+}
