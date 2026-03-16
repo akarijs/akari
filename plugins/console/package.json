@@ -1,0 +1,22 @@
+{
+  "name": "@akari/plugin-console",
+  "version": "0.0.1",
+  "description": "Console core plugin for Akari — WebSocket, DataService, and RPC",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@akari/core": "workspace:*",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "cordis": "^3.18.1",
+    "vite": "^8.0.1",
+    "vue": "^3.5.30",
+    "vue-router": "^5.0.4",
+    "ws": "^8.17.1"
+  },
+  "devDependencies": {
+    "@akari/plugin-server": "workspace:*",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.4.5"
+  }
+}
