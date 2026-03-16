@@ -1,0 +1,24 @@
+{
+  "name": "@akari/plugin-console-editor",
+  "version": "0.0.1",
+  "description": "Console editor plugin for Akari — article management via Console",
+  "type": "module",
+  "scripts": {},
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@akari/core": "workspace:*",
+    "@akari/plugin-console": "workspace:*",
+    "cordis": "^3.18.1",
+    "vue": "^3.5.30",
+    "vue-router": "^5.0.4"
+  },
+  "devDependencies": {
+    "@akari/plugin-server": "workspace:*",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "vite": "^8.0.1",
+    "ws": "^8.17.1",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.4.5"
+  }
+}
