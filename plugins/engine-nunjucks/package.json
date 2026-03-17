@@ -1,0 +1,26 @@
+{
+  "name": "@akarijs/plugin-engine-nunjucks",
+  "version": "0.0.1",
+  "description": "Nunjucks template engine plugin for Akari",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build"
+  },
+  "dependencies": {
+    "@akari/core": "workspace:*",
+    "cordis": "^3.18.1",
+    "nunjucks": "^3.2.4"
+  },
+  "devDependencies": {
+    "@types/nunjucks": "^3.2.6",
+    "typescript": "^5.4.5"
+  }
+}
