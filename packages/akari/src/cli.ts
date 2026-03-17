@@ -9,7 +9,8 @@
  */
 
 import { cac } from 'cac'
-import { resolve } from 'node:path'
+import { resolve, dirname } from 'node:path'
+import { mkdir, writeFile, cp, access } from 'node:fs/promises'
 import { fork } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { Loader } from './loader.js'
@@ -31,27 +32,13 @@ interface WorkerMessage {
   type: 'start' | 'exit' | 'reload'
 }
 
-async function getSiteSnapshot(ctx: any) {
-  const posts = ctx.datasource.hasCollection('posts')
-    ? await ctx.datasource.collection('posts').list()
-    : []
-  const pages = ctx.datasource.hasCollection('pages')
-    ? await ctx.datasource.collection('pages').list()
-    : []
-
-  const tags = new Set<string>()
-  const categories = new Set<string>()
-  for (const post of posts) {
-    for (const tag of post.tags || []) tags.add(tag)
-    for (const category of post.categories || []) categories.add(category)
-  }
-
-  return {
-    posts,
-    pages,
-    tags: [...tags],
-    categories: [...categories],
-  }
+async function writeOutput(outputDir: string, path: string, content: string): Promise<void> {
+  const normalizedPath = path.replace(/^\/+/, '')
+  const fullPath = normalizedPath === '' || normalizedPath.endsWith('/') || !normalizedPath.includes('.')
+    ? resolve(outputDir, normalizedPath, 'index.html')
+    : resolve(outputDir, normalizedPath)
+  await mkdir(dirname(fullPath), { recursive: true })
+  await writeFile(fullPath, content, 'utf-8')
 }
 
 const cli = cac('akari')
@@ -90,13 +77,30 @@ cli.command('build', 'Generate static site')
 
     console.log('🌸 Akari — Building site...')
 
-    const { posts, pages, tags, categories } = await getSiteSnapshot(ctx)
-    console.log(`📦 Content: ${posts.length} posts, ${pages.length} pages, ${tags.length} tags, ${categories.length} categories`)
+    // Enumerate all routes (no rendering yet)
+    await ctx.router.refresh()
+    const routePaths = ctx.router.paths()
+    console.log(`📦 Routes: ${routePaths.length} pages registered`)
 
     console.log(`🔨 Generating to: ${outputDir}`)
-    await (ctx as any).parallel('akari/generate', outputDir)
+    let count = 0
+    for await (const { path, content } of ctx.router.build()) {
+      await writeOutput(outputDir, path, content)
+      count++
+    }
 
-    console.log('✅ Site generated successfully!')
+    // Copy theme static assets if available
+    const themeSourceDir = ctx.get('theme.sourceDir' as any)
+    if (themeSourceDir) {
+      try {
+        await access(themeSourceDir)
+        await cp(themeSourceDir, outputDir, { recursive: true })
+      } catch {
+        // source dir may not exist
+      }
+    }
+
+    console.log(`✅ Site generated successfully! (${count} files)`)
     await ctx.stop()
   })
 
@@ -105,28 +109,29 @@ async function startDev(options: { config?: string; port?: string }) {
   if (options.port) {
     loader.config.server = { ...loader.config.server, port: parseInt(options.port, 10) }
   }
-  const outputDir = resolve(loader.baseDir, loader.config.build?.outputDir ?? './public')
-  loader.config.server = { ...loader.config.server, staticDir: outputDir }
+  // In dev mode, use theme's static source dir for static file serving
+  const themeSourceDir = loader.config.build?.themeSourceDir
+  if (themeSourceDir) {
+    loader.config.server = { ...loader.config.server, staticDir: resolve(loader.baseDir, themeSourceDir) }
+  }
   const ctx = await loader.createApp('dev')
 
   console.log('🌸 Akari — Starting development server...')
 
-  const { posts, pages } = await getSiteSnapshot(ctx)
-  console.log(`📦 Content: ${posts.length} posts, ${pages.length} pages`)
-
-  // Generate initial site
-  await (ctx as any).parallel('akari/generate', outputDir)
-  console.log('✅ Site generated successfully!')
+  // Enumerate routes (lazy — no rendering until request)
+  await ctx.router.refresh()
+  const routePaths = ctx.router.paths()
+  console.log(`📦 Routes: ${routePaths.length} pages registered (on-demand rendering)`)
 
   loader.watchConfig({
     onReload: async () => {
-      const nextOutput = resolve(loader.baseDir, loader.config.build?.outputDir ?? './public')
-      await (ctx as any).parallel('akari/generate', nextOutput)
-      console.log('♻️  Config reloaded and site regenerated.')
+      ctx.router.clearCache()
+      await ctx.router.refresh()
+      console.log('♻️  Config reloaded, routes refreshed.')
     },
   })
 
-  const port = loader.config.server?.port ?? 4000
+  const port = loader.config.plugins?.server?.port ?? 4000
   console.log(`🚀 Development server running at http://localhost:${port}`)
   console.log('   Watching config file changes...')
   console.log('   Press Ctrl+C to stop.')

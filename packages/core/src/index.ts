@@ -12,6 +12,9 @@ export type { Plugin } from 'cordis'
 export * from './transformer.js'
 export * from './template.js'
 export * from './datasource.js'
+export * from './renderer.js'
+export * from './layout.js'
+export * from './router.js'
 
 // ---------------------------------------------------------------------------
 // Legacy domain types (kept for backward compatibility)
