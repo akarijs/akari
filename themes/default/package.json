@@ -1,0 +1,29 @@
+{
+  "name": "@akari/plugin-theme-default",
+  "version": "0.0.1",
+  "description": "Default theme plugin for Akari",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build"
+  },
+  "dependencies": {
+    "@akari/core": "workspace:*",
+    "@akari/plugin-source-fs": "workspace:*",
+    "cordis": "^3.18.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "@types/node": "^20.14.2",
+    "@minatojs/driver-memory": "^3.7.0",
+    "minato": "^3.7.0",
+    "@akari/plugin-engine-nunjucks": "workspace:*"
+  }
+}

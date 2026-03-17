@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="{{ config.language or 'en' }}">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{{ tag.name }} | {{ config.title or 'Akari Blog' }}</title><link rel="stylesheet" href="/css/style.css"></head>
+<body class="tag-template">
+<header class="site-header"><div class="container"><a href="/" class="site-title">{{ config.title or 'Akari Blog' }}</a><nav class="site-nav"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></nav></div></header>
+<main class="site-main container">
+<h1>Tag: {{ tag.name }}</h1>
+<div class="post-list">{% for post in posts %}<article class="post-card"><h2><a href="{{ post.url }}">{{ post.title }}</a></h2><time datetime="{{ isodate(post.date) }}">{{ formatDate(post.date) }}</time></article>{% endfor %}</div>
+</main>
+<footer class="site-footer"><div class="container"><p>Powered by <a href="https://github.com/Mahoo12138/akari">Akari</a></p></div></footer>
+</body></html>
