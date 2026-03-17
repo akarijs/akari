@@ -1,0 +1,17 @@
+{
+  "name": "@akarijs/plugin-server",
+  "version": "0.0.1",
+  "description": "HTTP server plugin for Akari — provides the server service",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@akari/core": "workspace:*",
+    "cordis": "^3.18.1",
+    "koa": "^2.16.4"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.15.0",
+    "typescript": "^5.4.5"
+  }
+}
