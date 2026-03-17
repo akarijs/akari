@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@akari/plugin-source-fs": ["../source-fs/src/index.ts"]
+    },
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src"],
+  "exclude": ["dist", "node_modules"],
+  "references": [
+    { "path": "../../packages/core" },
+    { "path": "../source-fs" }
+  ]
+}

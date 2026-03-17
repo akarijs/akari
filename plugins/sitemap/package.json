@@ -1,0 +1,27 @@
+{
+  "name": "@akarijs/plugin-sitemap",
+  "version": "0.0.1",
+  "description": "Sitemap generation plugin for Akari",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build"
+  },
+  "dependencies": {
+    "@akari/core": "workspace:*",
+    "@akari/plugin-source-fs": "workspace:*",
+    "cordis": "^3.18.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "@akari/plugin-theme-default": "workspace:*",
+    "@akari/plugin-engine-nunjucks": "workspace:*"
+  }
+}
